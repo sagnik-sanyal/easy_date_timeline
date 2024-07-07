@@ -30,7 +30,6 @@ final class EasyDayProps {
       'This feature was deprecated after v0.0.7',
     )
     this.inactiveBorderRadius = EasyConstants.dayWidgetBorderRadius,
-    this.borderColor = EasyColors.dayWidgetBorderColor,
     this.width = EasyConstants.dayWidgetWidth,
     this.height = EasyConstants.dayWidgetHeight,
     @Deprecated(
@@ -109,9 +108,6 @@ final class EasyDayProps {
 
   /// The border radius of inactive days.
   final double inactiveBorderRadius;
-
-  /// The color of the border around the day widget.
-  final Color borderColor;
 
   /// The text style applied to the number of the active day.
   final TextStyle? activeDayNumStyle;

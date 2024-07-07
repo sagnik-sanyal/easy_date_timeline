@@ -21,7 +21,7 @@ typedef OnDateChangeCallBack = void Function(DateTime selectedDate);
 typedef ItemBuilderCallBack = Widget Function({
   required BuildContext context,
   required DateTime date,
-  bool isSelected,
+  bool isFocused,
   VoidCallback onTap,
   bool isDisabled,
 });

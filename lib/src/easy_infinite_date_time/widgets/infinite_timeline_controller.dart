@@ -6,14 +6,11 @@ class EasyInfiniteDateTimelineController {
   _InfiniteTimeLineWidgetState? _infiniteTimeLineState;
 
   /// Attaches the controller to the given EasyInfiniteDateTimeline state.
-  void _attachEasyDateState(_InfiniteTimeLineWidgetState state) {
-    _infiniteTimeLineState = state;
-  }
+  void _attachEasyDateState(_InfiniteTimeLineWidgetState state) =>
+      _infiniteTimeLineState = state;
 
   /// Detaches the controller from the EasyInfiniteDateTimeline state.
-  void _detachEasyDateState() {
-    _infiniteTimeLineState = null;
-  }
+  void _detachEasyDateState() => _infiniteTimeLineState = null;
 
   _InfiniteTimeLineWidgetState get _state {
     assert(
@@ -36,7 +33,7 @@ class EasyInfiniteDateTimelineController {
     duration = const Duration(milliseconds: 300),
     curve = Curves.linear,
   }) {
-    final offset = _state._getScrollOffset(_state._focusDate);
+    final double offset = _state._getScrollOffset(_state._focusDate);
     _state._controller.animateTo(
       offset,
       duration: duration,

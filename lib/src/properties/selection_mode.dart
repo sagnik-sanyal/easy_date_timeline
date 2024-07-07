@@ -8,10 +8,7 @@ sealed class SelectionMode {
   ///
   /// [duration] The duration of the selection animation.
   /// [curve] The curve of the selection animation.
-  const SelectionMode({
-    required this.duration,
-    required this.curve,
-  });
+  const SelectionMode({required this.duration, required this.curve});
 
   /// The duration of the selection animation.
   final Duration? duration;
@@ -24,7 +21,7 @@ sealed class SelectionMode {
 
   /// Represents a SelectionMode where auto-centering animation is applied.
   const factory SelectionMode.autoCenter({
-    Duration? duration,
+    Duration duration,
     Curve? curve,
   }) = SelectionModeAutoCenter;
 

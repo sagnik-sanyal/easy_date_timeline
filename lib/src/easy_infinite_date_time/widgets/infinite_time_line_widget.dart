@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/src/rendering/sliver.dart';
 
 import '../../properties/properties.dart';
 import '../../utils/utils.dart';
 import 'web_scroll_behavior.dart';
 
-part 'easy_infinite_date_timeline_controller.dart';
+part 'infinite_timeline_controller.dart';
 
 class InfiniteTimeLineWidget extends StatefulWidget {
   InfiniteTimeLineWidget({
+    required this.firstDate,
+    required this.focusedDate,
+    required this.activeDayTextColor,
+    required this.activeDayColor,
+    required this.lastDate,
+    required this.selectionMode,
     super.key,
     this.inactiveDayPredicate,
     this.dayProps = const EasyDayProps(),
@@ -17,12 +24,7 @@ class InfiniteTimeLineWidget extends StatefulWidget {
     required this.itemBuilder,
     this.physics,
     this.controller,
-    required this.firstDate,
-    required this.focusedDate,
-    required this.activeDayTextColor,
-    required this.activeDayColor,
-    required this.lastDate,
-    required this.selectionMode,
+    this.hiddenDayPredicate,
   })  : assert(timeLineProps.hPadding > -1,
             "Can't set timeline hPadding less than zero."),
         assert(timeLineProps.separatorPadding > -1,
@@ -51,10 +53,11 @@ class InfiniteTimeLineWidget extends StatefulWidget {
   /// The background color of the selected day.
   final Color activeDayColor;
 
-  /// Represents a list of inactive dates for the timeline widget.
-  /// Note that all the dates defined in the inactiveDates list will be
-  /// deactivated.
+  /// Inactive day predicate that determines whether a day is inactive.
   final bool Function(DateTime)? inactiveDayPredicate;
+
+  /// Dates that are considered hiddent and arent rendered in the timeline.
+  final bool Function(DateTime)? hiddenDayPredicate;
 
   /// Contains properties for configuring the appearance and behavior of
   /// the timeline widget.
@@ -132,11 +135,8 @@ class _InfiniteTimeLineWidgetState extends State<InfiniteTimeLineWidget> {
   /// Returns the height of a single day in the timeline.
   double get _dayHeight => _dayProps.height;
 
-  /// The number of days in the timeline.
-  late int _daysCount;
-
   /// Scroll controller for the infinite timeline widget.
-  late ScrollController _controller;
+  late final ScrollController _controller;
 
   /// Returns the focus date of the timeline widget.
   /// If the `focusedDate` property is not set,
@@ -146,22 +146,27 @@ class _InfiniteTimeLineWidgetState extends State<InfiniteTimeLineWidget> {
   /// The extent of each item in the infinite timeline widget.
   double _itemExtent = 0.0;
 
+  late final int _daysCount;
+
   @override
   void initState() {
     super.initState();
     _initItemExtend();
     _attachEasyController();
-    _daysCount =
-        EasyDateUtils.calculateDaysCount(widget.firstDate, widget.lastDate);
+    _daysCount = _daysDifference(widget.firstDate, widget.lastDate);
     _controller = ScrollController();
     WidgetsBinding.instance.addPostFrameCallback((_) => _jumpToInitialOffset());
   }
 
+  /// Calculates the number of days between the [firstDate]
+  /// and [lastDate] inclusive.
+  /// Returns the count of days.
+  int _daysDifference(DateTime firstDate, DateTime lastDate) =>
+      lastDate.difference(firstDate).inDays + 1;
+
   void _jumpToInitialOffset() {
     final initialScrollOffset = _getScrollOffset();
-    if (_controller.hasClients) {
-      _controller.jumpTo(initialScrollOffset);
-    }
+    if (_controller.hasClients) _controller.jumpTo(initialScrollOffset);
   }
 
   @override
@@ -238,8 +243,15 @@ class _InfiniteTimeLineWidgetState extends State<InfiniteTimeLineWidget> {
                 horizontal: _timeLineProps.hPadding,
                 vertical: _timeLineProps.vPadding,
               ),
-              sliver: SliverFixedExtentList.builder(
-                itemExtent: _itemExtent,
+              sliver: SliverVariedExtentList.builder(
+                itemCount: _daysCount,
+                itemExtentBuilder: (int index, SliverLayoutDimensions layout) {
+                  final DateTime currentDate =
+                      widget.firstDate.add(Duration(days: index));
+                  return (widget.hiddenDayPredicate?.call(currentDate) ?? false)
+                      ? 0
+                      : _itemExtent;
+                },
                 itemBuilder: (context, index) {
                   /// Adds a duration of [index] days to the
                   /// [firstDate] and assigns the result to [currentDate].
@@ -250,7 +262,6 @@ class _InfiniteTimeLineWidgetState extends State<InfiniteTimeLineWidget> {
                   /// days to be added to the [firstDate].
                   final DateTime currentDate =
                       widget.firstDate.add(Duration(days: index));
-
                   return Padding(
                     key: ValueKey<DateTime>(currentDate),
                     padding: EdgeInsets.symmetric(
@@ -259,7 +270,7 @@ class _InfiniteTimeLineWidgetState extends State<InfiniteTimeLineWidget> {
                     child: widget.itemBuilder(
                       context: context,
                       date: currentDate,
-                      isSelected: DateUtils.isSameDay(_focusDate, currentDate),
+                      isFocused: DateUtils.isSameDay(_focusDate, currentDate),
                       onTap: () => _onDayTapped(currentDate),
                       isDisabled:
                           widget.inactiveDayPredicate?.call(currentDate) ??
@@ -267,7 +278,6 @@ class _InfiniteTimeLineWidgetState extends State<InfiniteTimeLineWidget> {
                     ),
                   );
                 },
-                itemCount: _daysCount,
               ),
             ),
           ],
@@ -281,9 +291,9 @@ class _InfiniteTimeLineWidgetState extends State<InfiniteTimeLineWidget> {
   /// The [currentDate] parameter represents the current selected date.
   void _onDayTapped(DateTime currentDate) {
     widget.onDateChange?.call(currentDate);
-    final selectionMode = widget.selectionMode;
+    final SelectionMode selectionMode = widget.selectionMode;
     if (selectionMode.isAutoCenter || selectionMode.isAlwaysFirst) {
-      final offset = _getScrollOffset(currentDate);
+      final double offset = _getScrollOffset(currentDate);
       _controller.animateTo(
         offset,
         duration: selectionMode.duration ?? kThemeAnimationDuration,
@@ -299,33 +309,27 @@ class _InfiniteTimeLineWidgetState extends State<InfiniteTimeLineWidget> {
   /// Returns the calculated scroll offset.
   double _getScrollOffset([DateTime? lastDate]) {
     // Get the last date to use, defaulting to widget.focusedDate
-    //if not provided
-    final effectiveLastDate = lastDate ?? widget.focusedDate;
-
-    // Check if a date is provided
-    if (effectiveLastDate != null) {
-      final scrollHelper = InfiniteTimelineScrollHelper(
-        firstDate: widget.firstDate,
-        lastDate: effectiveLastDate,
-        dayWidth: _itemExtent,
-        maxScrollExtent: _controller.position.maxScrollExtent,
-        screenWidth: _controller.position.viewportDimension,
-      );
-      // Use a switch expression to determine the scroll offset
-      // based on the selection mode
-      return switch (widget.selectionMode) {
-        // If the selection mode is none or always first
-        SelectionModeNone() ||
-        SelectionModeAlwaysFirst() =>
-          scrollHelper.getScrollPositionForFirstDate(),
-        // If the selection mode is auto center
-        SelectionModeAutoCenter() =>
-          scrollHelper.getScrollPositionForCenterDate(),
-      };
-    } else {
-      // If no date is provided, return 0.0 as the scroll offset
-      return 0.0;
-    }
+    // if not provided
+    final DateTime? effectiveLastDate = lastDate ?? widget.focusedDate;
+    if (effectiveLastDate == null) return 0;
+    final InfiniteTimelineScrollHelper scrollHelper =
+        InfiniteTimelineScrollHelper(
+      firstDate: widget.firstDate,
+      lastDate: effectiveLastDate,
+      dayWidth: _itemExtent,
+      maxScrollExtent: _controller.position.maxScrollExtent,
+      screenWidth: _controller.position.viewportDimension,
+      isHiddenDay: widget.hiddenDayPredicate,
+    );
+    return switch (widget.selectionMode) {
+      // If the selection mode is none or always first
+      SelectionModeNone() ||
+      SelectionModeAlwaysFirst() =>
+        scrollHelper.getScrollPositionForFirstDate(),
+      // If the selection mode is auto center
+      SelectionModeAutoCenter() =>
+        scrollHelper.getScrollPositionForCenterDate(),
+    };
   }
 
   /// Initializes the item extend value based on the current orientation and timeline properties.
