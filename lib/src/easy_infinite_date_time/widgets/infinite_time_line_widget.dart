@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/src/rendering/sliver.dart';
+import 'package:flutter/rendering.dart' show SliverLayoutDimensions;
 
 import '../../properties/properties.dart';
 import '../../utils/utils.dart';
@@ -268,13 +268,11 @@ class _InfiniteTimeLineWidgetState extends State<InfiniteTimeLineWidget> {
                       horizontal: _timeLineProps.separatorPadding / 2,
                     ),
                     child: widget.itemBuilder(
-                      context: context,
-                      date: currentDate,
-                      isFocused: DateUtils.isSameDay(_focusDate, currentDate),
-                      onTap: () => _onDayTapped(currentDate),
-                      isDisabled:
-                          widget.inactiveDayPredicate?.call(currentDate) ??
-                              false,
+                      context,
+                      currentDate,
+                      DateUtils.isSameDay(_focusDate, currentDate),
+                      () => _onDayTapped(currentDate),
+                      widget.inactiveDayPredicate?.call(currentDate) ?? false,
                     ),
                   );
                 },
