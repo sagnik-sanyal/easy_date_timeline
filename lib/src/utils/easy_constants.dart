@@ -5,8 +5,6 @@ class EasyConstants {
   EasyConstants._();
 
   static const Duration animationDuration = Duration(milliseconds: 300);
-  static const Duration selectionModeAnimationDuration =
-      Duration(milliseconds: 400);
 
   // Day widget constants
   static const double dayWidgetBorderRadius = 12.0;

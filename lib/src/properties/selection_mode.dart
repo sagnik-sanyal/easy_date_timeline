@@ -57,11 +57,7 @@ final class SelectionModeNone extends SelectionMode {
   ///
   /// This constructor sets the [duration] to `null` and the [curve] to `null`,
   /// which means that the selection doesn't animate.
-  const SelectionModeNone()
-      : super(
-          duration: null,
-          curve: null,
-        );
+  const SelectionModeNone() : super(duration: null, curve: null);
 
   @override
   String toString() => 'SelectionModeNone()';
@@ -81,10 +77,7 @@ final class SelectionModeAutoCenter extends SelectionMode {
   ///
   /// If [duration] is `null`, a default duration of 300ms is used.
   /// If [curve] is `null`, a default curve of [Curves.linear] is used.
-  const SelectionModeAutoCenter({
-    super.duration,
-    super.curve,
-  });
+  const SelectionModeAutoCenter({super.duration, super.curve});
 
   @override
   String toString() =>
@@ -112,10 +105,7 @@ final class SelectionModeAlwaysFirst extends SelectionMode {
   ///
   /// If [duration] is `null`, a default duration of 300ms is used.
   /// If [curve] is `null`, a default curve of [Curves.linear] is used.
-  const SelectionModeAlwaysFirst({
-    super.duration,
-    super.curve,
-  });
+  const SelectionModeAlwaysFirst({super.duration, super.curve});
 
   @override
   String toString() =>
